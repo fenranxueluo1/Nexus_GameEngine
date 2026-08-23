@@ -1,7 +1,17 @@
 #pragma once
 #include "Registry.h"
 
+namespace luabridge { class LuaRef; }
+
+struct lua_State;
+
 namespace NEXUS_CORE::ECS {
+
+	struct LuaState
+	{
+		lua_State* state{ nullptr };
+	};
+
 	class Entity
 	{
 	private:
@@ -39,6 +49,11 @@ namespace NEXUS_CORE::ECS {
 		*/
 		inline entt::registry& GetRegistry() { return m_Registry.GetRegistry(); }
 
+		static void CreateLuaEntityBind(lua_State* lua, Registry& registry);
+
+		template <typename TComponent>
+		static void RegisterMetaComponent();
+
 		/*
 		* @brief 为实体添加一个组件。
 		* @tparam TComponent 组件类型，Args 为构造该组件所需的各种参数。
@@ -65,6 +80,9 @@ namespace NEXUS_CORE::ECS {
 		template <typename TComponent>
 		void RemoveComponent();
 	};
+
+	template <typename TComponent>
+	luabridge::LuaRef add_component(Entity& entity, const luabridge::LuaRef& comp, LuaState state);
 }
 
 #include "Entity.inl"
