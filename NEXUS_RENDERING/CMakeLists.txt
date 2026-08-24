@@ -38,8 +38,9 @@ target_include_directories(NEXUS_RENDERING
 )
 
 # ---------- Vulkan 与 glm 依赖 ----------
-# Vulkan SDK 通过 find_package(Vulkan COMPONENTS volk shaderc_combined) 在顶层引入，
-# 目标 Vulkan::Vulkan / Vulkan::volk / Vulkan::shaderc_combined 提供头文件与链接库
+# Vulkan SDK 通过 find_package(Vulkan COMPONENTS volk glslc) 在顶层引入，
+# 目标 Vulkan::Vulkan / Vulkan::volk 提供头文件与链接库
+# （着色器用 glslc 离线预编译为 SPIR-V，因此不再链接 MSVC 专用的 shaderc）
 # glm 以 <glm/glm.hpp> 方式包含，include 路径指向 Dependencies/
 target_include_directories(NEXUS_RENDERING
     PUBLIC
@@ -53,7 +54,6 @@ target_link_libraries(NEXUS_RENDERING
     PUBLIC
         Vulkan::Vulkan
         Vulkan::volk
-        Vulkan::shaderc_combined
     PRIVATE
         NEXUS_LOGGER
         SDL3

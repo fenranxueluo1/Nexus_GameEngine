@@ -123,19 +123,38 @@ add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
         $<TARGET_FILE_DIR:NEXUS_EDITOR>
 )
 
+# ---------- 拷贝 MinGW 运行时 DLL 到 exe 目录 ----------
+# 避免程序从 PATH 里误加载 Git 自带的 libstdc++-6.dll（版本不匹配会崩溃）。
+# Windows 优先从 exe 所在目录加载 DLL，因此把编译工具链的运行时 DLL 拷贝过去即可。
+if(MINGW)
+    get_filename_component(MINGW_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    foreach(runtime_dll libstdc++-6.dll libgcc_s_seh-1.dll libwinpthread-1.dll)
+        add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${MINGW_BIN_DIR}/${runtime_dll}
+                $<TARGET_FILE_DIR:NEXUS_EDITOR>
+        )
+    endforeach()
+endif()
+
 # SDL3_image / SDL3_mixer 的 lib/optional/ 下是可选格式解码库
 # （libpng/libwebp/libtiff/libogg/libopus 等）。核心 dll 已支持常见格式，
 # 但加载 webp/tiff/opus 等需这些 dll，统一拷贝以防运行时缺失。
-add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${SDL_IMG_DIR}/lib/optional
-        $<TARGET_FILE_DIR:NEXUS_EDITOR>/optional
-)
-add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${SDL_MIX_DIR}/lib/optional
-        $<TARGET_FILE_DIR:NEXUS_EDITOR>/optional
-)
+# 注意：MinGW 发行版没有 optional/ 目录，故先检查源目录是否存在。
+if(EXISTS ${SDL_IMG_DIR}/lib/optional)
+    add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${SDL_IMG_DIR}/lib/optional
+            $<TARGET_FILE_DIR:NEXUS_EDITOR>/optional
+    )
+endif()
+if(EXISTS ${SDL_MIX_DIR}/lib/optional)
+    add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${SDL_MIX_DIR}/lib/optional
+            $<TARGET_FILE_DIR:NEXUS_EDITOR>/optional
+    )
+endif()
 
 # ---------- 拷贝 assets 资源到输出目录 ----------
 # 运行时按相对路径 assets/textures/... 加载，需保证 exe 同目录下有 assets/
@@ -143,4 +162,18 @@ add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/assets
         $<TARGET_FILE_DIR:NEXUS_EDITOR>/assets
+)
+
+# ---------- 用 glslc 预编译着色器为 SPIR-V ----------
+# 把 assets/shaders 下的 .vert / .frag 编译成 .spv，输出到 exe 同目录的 assets/shaders/，
+# 运行时 VulkanContext 直接加载 .spv（避免链接 MSVC 专用的 shaderc 库，兼容 MinGW）
+add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
+    COMMAND $<TARGET_FILE:Vulkan::glslc>
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basicShader.vert
+        -o $<TARGET_FILE_DIR:NEXUS_EDITOR>/assets/shaders/basicShader.vert.spv
+)
+add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
+    COMMAND $<TARGET_FILE:Vulkan::glslc>
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basicShader.frag
+        -o $<TARGET_FILE_DIR:NEXUS_EDITOR>/assets/shaders/basicShader.frag.spv
 )

@@ -13,24 +13,8 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
 namespace NEXUS_RENDERING {
-
-	namespace {
-		std::string readTextFile(const std::string& filePath)
-		{
-			std::ifstream infile(filePath);
-			if (infile.is_open())
-			{
-				std::stringstream buffer;
-				buffer << infile.rdbuf();
-				infile.close();
-				return buffer.str();
-			}
-			return std::string();
-		}
-	}
 
 	VulkanContext& VulkanContext::Get()
 	{
@@ -590,22 +574,27 @@ namespace NEXUS_RENDERING {
 		}
 	}
 
-	VkShaderModule VulkanContext::createShaderModule(const std::string& fileName, const std::string& source, shaderc_shader_kind kind) const
+	VkShaderModule VulkanContext::createShaderModule(const std::string& filePath) const
 	{
-		// 将着色器编译为 SPIR-V
-		shaderc::Compiler compiler;
-		shaderc::CompileOptions opts;
-		opts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
-		opts.SetTargetSpirv(shaderc_spirv_version_1_6);
-		opts.SetOptimizationLevel(shaderc_optimization_level_performance);
-		shaderc::CompilationResult result = compiler.CompileGlslToSpv(source, kind, fileName.c_str(), opts);
-
-		if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+		// 读取预编译的 SPIR-V 二进制（构建时由 glslc 生成）
+		std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+		if (!file.is_open())
 		{
-			std::cerr << "Shader Compilation Error: " << result.GetErrorMessage() << std::endl;
+			showError("Specified shader file doesn't exist: " + filePath);
 			return nullptr;
 		}
-		std::vector<uint32_t> spv = { result.cbegin(), result.cend() };
+
+		const std::streamsize fileSize = file.tellg();
+		if (fileSize <= 0)
+		{
+			showError("Specified shader file is empty: " + filePath);
+			return nullptr;
+		}
+
+		std::vector<uint32_t> spv(static_cast<size_t>(fileSize) / sizeof(uint32_t));
+		file.seekg(0, std::ios::beg);
+		file.read(reinterpret_cast<char*>(spv.data()), fileSize);
+		file.close();
 
 		// 把 SPIR-V 交给 Vulkan 创建着色器模块
 		VkShaderModuleCreateInfo moduleCreateInfo
@@ -625,15 +614,6 @@ namespace NEXUS_RENDERING {
 
 	std::shared_ptr<Shader> VulkanContext::loadShaders(const std::string& vertexPath, const std::string& fragmentPath)
 	{
-		// 从磁盘读取着色器文件
-		const std::string vertSource = readTextFile(vertexPath);
-		const std::string fragSource = readTextFile(fragmentPath);
-		if (vertSource.empty() || fragSource.empty())
-		{
-			showError("Specified shader file doesn't exist: " + vertexPath + " / " + fragmentPath);
-			return nullptr;
-		}
-
 		// 销毁之前的着色器模块与管线
 		if (m_pipeline)
 		{
@@ -649,9 +629,9 @@ namespace NEXUS_RENDERING {
 			vkDestroyShaderModule(m_device, m_fragShader, nullptr);
 		}
 
-		// 创建图形渲染管线所需的着色器模块
-		m_vertShader = createShaderModule(vertexPath, vertSource, shaderc_vertex_shader);
-		m_fragShader = createShaderModule(fragmentPath, fragSource, shaderc_fragment_shader);
+		// 创建图形渲染管线所需的着色器模块（从磁盘读取 .spv 二进制）
+		m_vertShader = createShaderModule(vertexPath);
+		m_fragShader = createShaderModule(fragmentPath);
 		if (!m_vertShader || !m_fragShader)
 		{
 			return nullptr;

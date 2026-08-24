@@ -167,7 +167,7 @@ bool Application::LoadShaders()
 		return false;
 	}
 
-    if (!assetManager->AddShader("basic", "assets/shaders/basicShader.vert",  "assets/shaders/basicShader.frag"))
+    if (!assetManager->AddShader("basic", "assets/shaders/basicShader.vert.spv",  "assets/shaders/basicShader.frag.spv"))
 	{
 		NEXUS_ERROR("无法添加着色器到资产管理器！");
 		return false;

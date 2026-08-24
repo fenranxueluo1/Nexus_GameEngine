@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <shaderc/shaderc.hpp>
 
 struct SDL_Window;
 
@@ -60,7 +59,7 @@ namespace NEXUS_RENDERING {
 
 		/*
 		* @brief 编译着色器并创建图形渲染管线。
-		* @param vertexPath 顶点着色器文件路径（GLSL 源码，运行时用 shaderc 编译）。
+		* @param vertexPath 顶点着色器文件路径（SPIR-V 二进制，构建时用 glslc 预编译）。
 		* @param fragmentPath 片段着色器文件路径。
 		* @return 返回包装了该管线的 Shader 对象，失败返回 nullptr。
 		*/
@@ -164,7 +163,7 @@ namespace NEXUS_RENDERING {
 		bool initializeVMA();
 		bool createSwapchain(uint32_t width, uint32_t height);
 		void destroySwapchain();
-		VkShaderModule createShaderModule(const std::string& fileName, const std::string& source, shaderc_shader_kind kind) const;
+		VkShaderModule createShaderModule(const std::string& filePath) const;
 		bool createGraphicsPipeline();
 		bool createDescriptorSets();
 		bool createSyncResources();

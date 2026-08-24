@@ -33,8 +33,9 @@ else()
 endif()
 
 # ---------- Vulkan 开发包 ----------
-# 查找 Vulkan SDK，包含 volk（Vulkan 加载器）与 shaderc_combined（着色器编译）组件
-find_package(Vulkan REQUIRED COMPONENTS volk shaderc_combined)
+# 查找 Vulkan SDK，包含 volk（Vulkan 加载器）与 glslc（GLSL 着色器离线编译器）
+# 着色器在构建时用 glslc 预编译为 SPIR-V，运行时直接加载 .spv（兼容 MinGW 工具链）
+find_package(Vulkan REQUIRED COMPONENTS volk glslc)
 
 # ---------- 引入顶层可执行项目 ----------
 # NEXUS_EDITOR 会自动级联引入：

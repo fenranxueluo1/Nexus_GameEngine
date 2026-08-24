@@ -74,7 +74,7 @@ namespace NEXUS_CORE::ECS {
 		return entity.RemoveComponent<TComponent>();
 	}
 
-	template<typename TComponent>
+template<typename TComponent>
 	inline void Entity::RegisterMetaComponent()
 	{
 		using namespace entt::literals;
@@ -84,6 +84,6 @@ namespace NEXUS_CORE::ECS {
 			.template func<&add_component<TComponent>>("add_component"_hs)
 			.template func<&has_component<TComponent>>("has_component"_hs)
 			.template func<&get_component<TComponent>>("get_component"_hs)
-			.template func<&remove_component<TComponent>>("remove_component"_hs);
+.template func<&remove_component<TComponent>>("remove_component"_hs);
 	}
 }
