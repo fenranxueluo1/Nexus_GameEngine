@@ -26,6 +26,7 @@ target_sources(NEXUS_CORE
         Core/Systems/RenderSystem.cpp
         Core/ECS/Components/TransformComponent.cpp
         Core/ECS/Components/SpriteComponent.cpp
+        Core/Scripting/GlmLuaBindings.cpp
         
 )
 
