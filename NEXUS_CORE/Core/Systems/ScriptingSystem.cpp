@@ -7,18 +7,7 @@
 #include <lua.hpp>
 #include <LuaBridge3/LuaBridge.h>
 
-// IntelliSense 专用补丁（仅在 IDE 解析时生效，不影响编译）：
-// 为 entt::internal::view_iterator 补充 operator!=，规避 VS Code IntelliSense
-// 对 C++20 重写规则（!= 由 == 推导）支持不完整导致的误报。
-#ifdef __INTELLISENSE__
-namespace entt::internal {
-template<typename Type, bool Checked, std::size_t Get, std::size_t Exclude>
-[[nodiscard]] constexpr bool operator!=(const view_iterator<Type, Checked, Get, Exclude> &lhs,
-                                        const view_iterator<Type, Checked, Get, Exclude> &rhs) noexcept {
-    return !(lhs == rhs);
-}
-} // namespace entt::internal
-#endif
+using namespace NEXUS_CORE::ECS;
 
 namespace NEXUS_CORE::Systems {
 
@@ -131,11 +120,16 @@ namespace NEXUS_CORE::Systems {
 
 	void ScriptingSystem::RegisterLuaBindings(lua_State* lua, NEXUS_CORE::ECS::Registry& registry)
 	{
-		NEXUS_CORE::ECS::Entity::CreateLuaEntityBind(lua, registry);
-		NEXUS_CORE::ECS::TransformComponent::CreateLuaTransformBind(lua);
-		NEXUS_CORE::ECS::SpriteComponent::CreateSpriteLuaBind(lua, registry);
+		Registry::CreateLuaRegistryBind(lua, registry);
+		Entity::CreateLuaEntityBind(lua, registry);
+		TransformComponent::CreateLuaTransformBind(lua);
+		SpriteComponent::CreateSpriteLuaBind(lua, registry);
 
-		NEXUS_CORE::ECS::Entity::RegisterMetaComponent<NEXUS_CORE::ECS::TransformComponent>();
-		NEXUS_CORE::ECS::Entity::RegisterMetaComponent<NEXUS_CORE::ECS::SpriteComponent>();
+		Entity::RegisterMetaComponent<TransformComponent>();
+		Entity::RegisterMetaComponent<SpriteComponent>();
+
+		Registry::RegisterMetaComponent<TransformComponent>();
+		Registry::RegisterMetaComponent<SpriteComponent>();
+
 	}
 }
