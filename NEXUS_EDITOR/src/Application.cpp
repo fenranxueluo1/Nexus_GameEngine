@@ -19,6 +19,7 @@
 #include <lua.hpp>
 #include <LuaBridge3/LuaBridge.h>
 #include <Core/Systems/RenderSystem.h>
+#include <Core/Systems/AnimationSystem.h>
 
 namespace NEXUS_EDITOR {
 
@@ -58,7 +59,13 @@ namespace NEXUS_EDITOR {
     	return false;
     }
 
-    if (!assetManager->AddTexture("castle", "./assets/textures/tileset.png", true))
+    if (!assetManager->AddTexture("castle", "./assets/textures/castle.png", true))
+    {
+    	NEXUS_ERROR("无法创建并添加纹理");
+    	return false;
+    }
+
+	if (!assetManager->AddTexture("player", "./assets/textures/player.png", true))
     {
     	NEXUS_ERROR("无法创建并添加纹理");
     	return false;
@@ -122,6 +129,19 @@ namespace NEXUS_EDITOR {
 	if (!m_pRegistry->AddToContext<std::shared_ptr<NEXUS_CORE::Systems::RenderSystem>>(renderSystem))
 	{
 		NEXUS_ERROR("无法将渲染系统添加到注册表上下文中!");
+		return false;
+	}
+
+	auto animationSystem = std::make_shared<NEXUS_CORE::Systems::AnimationSystem>(*m_pRegistry);
+	if (!animationSystem)
+	{
+		NEXUS_ERROR("无法创建动画系统!");
+		return false;
+	}
+
+	if (!m_pRegistry->AddToContext<std::shared_ptr<NEXUS_CORE::Systems::AnimationSystem>>(animationSystem))
+	{
+		NEXUS_ERROR("无法将动画系统添加到注册表上下文中!");
 		return false;
 	}
 
@@ -214,6 +234,9 @@ bool Application::LoadShaders()
 
 		auto& scriptSystem = m_pRegistry->GetContext<std::shared_ptr<NEXUS_CORE::Systems::ScriptingSystem>>();
 		scriptSystem->Update();
+
+		auto& animationSystem = m_pRegistry->GetContext<std::shared_ptr<NEXUS_CORE::Systems::AnimationSystem>>();
+		animationSystem->Update();
     }
 
     void Application::Render()

@@ -27,6 +27,8 @@ target_sources(NEXUS_CORE
         Core/ECS/Components/TransformComponent.cpp
         Core/ECS/Components/SpriteComponent.cpp
         Core/Scripting/GlmLuaBindings.cpp
+        Core/ECS/Components/AnimationComponent.cpp
+        Core/Systems/AnimationSystem.cpp
         
 )
 
@@ -52,6 +54,8 @@ target_include_directories(NEXUS_CORE
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/LuaBridge3
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/Lua_5.5/include
+         PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/SDL/include
 )
 
 # ---------- 链接依赖 ----------
