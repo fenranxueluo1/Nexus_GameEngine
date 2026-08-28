@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.4.2)
+cmake_minimum_required(VERSION 4.3)
 project(NEXUS_LOGGER)
 
 # ---------- C++ 标准 ----------
@@ -34,6 +34,8 @@ target_include_directories(NEXUS_LOGGER
         $<INSTALL_INTERFACE:include>
 )
 
-# ---------- Windows API ----------
-# Logger 使用 <Windows.h> / GetStdHandle / SetConsoleTextAttribute 等 Win32 API，
-# 在 Windows 平台上由系统 SDK 直接提供，无需额外链接第三方库。
+# ---------- 平台相关实现 ----------
+# Logger 的控制台着色在源码内做了平台分支：
+#   Windows : <Windows.h> / GetStdHandle / SetConsoleTextAttribute
+#   Linux   : ANSI 转义序列
+# 两者都只依赖系统自带的头文件与运行时，无需额外链接第三方库。

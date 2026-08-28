@@ -1,35 +1,65 @@
 # Nexus
 
-一个基于 C++23 的轻量级 2D 游戏引擎框架，使用 SDL3 作为窗口/事件系统，**Vulkan** 作为图形渲染后端（volk 函数加载 + VMA 内存管理 + shaderc 运行时着色器编译），基于 entt 实现 ECS 实体组件系统。项目采用模块化分层设计，方便扩展与复用。
+一个基于 C++23 的轻量级 2D 游戏引擎框架，使用 SDL3 作为窗口/事件系统，**Vulkan** 作为图形渲染后端（volk 函数加载 + VMA 内存管理 + glslc 离线着色器编译），基于 entt 实现 ECS 实体组件系统。项目采用模块化分层设计，方便扩展与复用。
+
+**支持 Windows 与 Linux 双平台**，CMake 会自动根据平台选择依赖来源：Windows 使用仓库内随附的预编译库，Linux 使用系统安装的库。
 
 ## 功能特性
 
 - **模块化架构**：窗口、工具、渲染、核心 ECS、日志各成独立静态库，职责清晰、可独立复用
 - **ECS 实体组件系统**：基于 [entt](https://github.com/skypjack/entt)，提供 `Entity` / `Registry` 封装与内置组件（变换、精灵、标识）
 - **Vulkan 2D 渲染**：`VulkanContext` 封装 Vulkan 实例 / 设备 / 交换链 / 图形管线 / 帧同步，`BatchRenderer` 基于 VMA 顶点缓冲 + 描述符纹理数组 + push constant 实现精灵批渲染
-- **运行时着色器编译**：通过 shaderc 把 GLSL 编译为 SPIR-V（支持 Vulkan 1.4 / SPIR-V 1.6），无需预编译 `.spv` 文件
-- **日志系统**：提供 `NEXUS_LOG` / `NEXUS_WARN` / `NEXUS_ERROR` 宏，基于 C++20 `<format>`，错误日志自动携带源位置（`source_location`）
+- **着色器离线编译**：构建时通过 `glslc` 把 GLSL 预编译为 SPIR-V（支持 Vulkan 1.4 / SPIR-V 1.6），运行时直接加载 `.spv`，无需链接平台专用的 shaderc 库
+- **日志系统**：提供 `NEXUS_LOG` / `NEXUS_WARN` / `NEXUS_ERROR` 宏，基于 C++20 `<format>`，错误日志自动携带源位置（`source_location`），控制台输出按级别着色（Windows 用 Win32 控制台属性，Linux 用 ANSI 转义序列）
 - **SDL3 现代化封装**：基于 `std::unique_ptr` 与自定义删除器管理 SDL 资源（`SDL_Window`、`SDL_Gamepad`、`SDL_Cursor`），杜绝手动释放遗漏
-- **跨平台构建**：使用 CMake 统一管理，兼容 MSVC 与 GCC/Clang
+- **跨平台构建**：Windows（MSVC / MinGW）与 Linux（GCC / Clang）双平台支持，各子项目的 CMakeLists 内以 `if(WIN32)` / `else()` 分别配置依赖，平台差异就地可见
 
 ## 技术栈
 
 | 组件 | 技术 |
 | --- | --- |
 | 语言标准 | C++23 |
-| 构建系统 | CMake ≥ 4.4.2 |
+| 构建系统 | CMake ≥ 4.3 |
 | 窗口/事件 | SDL3（含 image / mixer / ttf 扩展） |
-| 图形 API | Vulkan 1.4（volk 加载 + VMA 内存 + shaderc 编译） |
+| 图形 API | Vulkan 1.4（volk 加载 + VMA 内存 + glslc 离线编译 SPIR-V） |
 | 数学库 | glm |
 | ECS | entt（header-only） |
 
 ## 环境要求
 
-- **CMake** ≥ 4.4.2
+- **CMake** ≥ 4.3
 - **C++23 编译器**：MSVC 19.40+ / GCC 13+ / Clang 16+
-- **Vulkan SDK**（1.4+）：`find_package(Vulkan REQUIRED COMPONENTS volk shaderc_combined)`，SDK 需包含 volk、VMA、shaderc 组件
-- **SDL3** 及扩展库：已随仓库附带在 `Dependencies/`（Windows）
+- **Vulkan SDK**（1.4+）：`find_package(Vulkan REQUIRED COMPONENTS volk glslc)`，SDK 需包含 volk、VMA 组件以及 `glslc` 可执行文件
+- **SDL3** 及扩展库：
+  - Windows：已随仓库附带在 `Dependencies/`
+  - Linux：由系统包管理器提供（见下方「各平台依赖」）
 - **Vulkan 驱动**：需硬件驱动支持
+
+### 各平台依赖
+
+| 依赖 | Windows | Linux |
+| --- | --- | --- |
+| Vulkan SDK | 官方安装包（自动设置 `VULKAN_SDK`） | 官方 SDK，使用前需 `source <VulkanSDK>/setup-env.sh` |
+| SDL3 / SDL3_image | `Dependencies/` 预编译库 | 系统库（**必需**） |
+| SDL3_mixer / SDL3_ttf | `Dependencies/` 预编译库 | 系统库（可选，缺失时跳过并给出提示） |
+| Lua | `Dependencies/Lua_5.5`（5.5） | 系统库（Lua 5.4，如 Fedora 的 `lua-devel`） |
+| glm / entt / LuaBridge3 | `Dependencies/`（header-only） | 同左 |
+
+Linux（Fedora）安装系统依赖：
+
+```bash
+sudo dnf install SDL3-devel SDL3_image-devel SDL3_mixer-devel SDL3_ttf-devel lua-devel
+```
+
+Linux（Debian/Ubuntu）：
+
+```bash
+sudo apt install libsdl3-dev libsdl3-image-dev libsdl3-mixer-dev libsdl3-ttf-dev liblua5.4-dev
+```
+
+> **为何每个子项目都要各自 `find_package`**：CMake 的导入目标（如 `SDL3::SDL3`、`PkgConfig::SDL3`）只在**调用查找命令的目录及其子目录**内可见。而 `NEXUS_WINDOW` / `NEXUS_RENDERING` / `NEXUS_CORE` / `NEXUS_EDITOR` 是通过 `NEXUS_EDITOR` 平级引入的**兄弟目录**，彼此看不到对方查到的目标，因此必须各自查找。重复调用 `find_package` 与 `pkg_check_modules` 是安全的（内部有缓存，不会重复创建目标）。Vulkan 是在顶层 `add_subdirectory` 之前查找的，所以 `Vulkan::Vulkan` / `Vulkan::volk` / `Vulkan::glslc` 对所有子项目可见。
+
+> **为何要 pkg-config 回退**：并非所有库都提供 CMake Config 包（例如 Fedora 上的 SDL3_mixer 只有 pkg-config），保留回退路径可避免因缺少 config 包而中断配置。
 
 ## 项目结构
 
@@ -80,7 +110,7 @@ NEXUS_EDITOR (executable)
    │     └── NEXUS_UTILITIES ───────────┐
    ├── NEXUS_RENDERING (static lib)     │
    │     ├── Vulkan::Vulkan / volk      ├── SDL3 (头文件 + lib)
-   │     ├── Vulkan::shaderc_combined   │
+   │     ├── Vulkan::glslc (build-time) │
    │     └── NEXUS_LOGGER               │
    ├── NEXUS_CORE  (static lib)         │
    │     └── NEXUS_RENDERING (见上)     │
@@ -103,12 +133,32 @@ cmake -B build -G "Visual Studio 17 2022"
 cmake --build build --config Debug
 ```
 
-构建产物位于 `build/bin/`，静态库位于 `build/lib/`。构建后 SDL3 及扩展库的 dll、`assets/` 资源会被自动拷贝到可执行文件同目录。
+#### Linux（GCC / Clang）
+
+```bash
+# 先让 VULKAN_SDK 指向 SDK 根目录（路径按实际版本调整）
+source ~/vulkanSDK/1.4.357.1/x86_64/setup-env.sh
+
+# 在仓库根目录执行
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j$(nproc)
+```
+
+构建产物位于 `build/bin/`，静态库位于 `build/lib/`。
+
+- **Windows**：构建后 SDL3 及扩展库的 dll、`assets/` 资源会被自动拷贝到可执行文件同目录
+- **Linux**：SDL3 等由系统提供，无需拷贝；仅拷贝 `assets/`，并由 `glslc` 把 `assets/shaders` 下的着色器编译为 `.spv`
 
 ### 运行
 
 ```powershell
+# Windows
 ./build/bin/Debug/NEXUS_EDITOR.exe
+```
+
+```bash
+# Linux
+./build/bin/NEXUS_EDITOR
 ```
 
 启动后会创建一个 640×480 的 Vulkan 窗口，使用 ECS 实体 + 精灵组件从 `tileset.png` 裁剪并渲染一个移动/旋转的精灵，按 `ESC` 或关闭窗口即可退出。
@@ -158,7 +208,7 @@ NEXUS_ERROR("纹理创建失败！");                                  // 错误
 封装 Vulkan 渲染相关组件：
 
 - `VulkanContext`：Vulkan 核心上下文（单例）——实例 / 物理设备 / 逻辑设备 / 交换链 / 图形管线 / 描述符 / 帧同步。提供 `initialize()`、`beginFrame()` / `endFrame()`（帧循环）、`addTexture()`（纹理上传）等接口
-- `Shader` / `ShaderLoader`：通过 shaderc 把 GLSL 编译为 SPIR-V 并创建图形管线，`SetUniformMat4("uProjection", ...)` 缓存相机矩阵（经 push constant 提交）
+- `Shader` / `ShaderLoader`：加载构建期由 `glslc` 预编译好的 SPIR-V（`.spv`）并创建图形管线，`SetUniformMat4("uProjection", ...)` 缓存相机矩阵（经 push constant 提交）
 - `Texture` / `TextureLoader`：用 SDL3_image 解码图片，经 VulkanContext 上传为 GPU 纹理，返回描述符纹理数组索引
 - `BatchRenderer`：精灵批渲染器——每帧独立顶点缓冲（避免双缓冲竞争）、静态索引缓冲、按纹理分组批量绘制（`vkCmdDrawIndexed`）
 - `Camera2D`：2D 正交相机，`SetScale()` 缩放、`Update()` 刷新投影矩阵、`GetCameraMatrix()` 取矩阵（near=-1, far=1，避免精灵落在近裁剪面上被剔除）

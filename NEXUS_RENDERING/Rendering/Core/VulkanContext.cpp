@@ -5,7 +5,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 #define VOLK_IMPLEMENTATION
-#include <Volk/volk.h>
+#include <volk/volk.h>
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
 
