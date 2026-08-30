@@ -29,7 +29,7 @@ target_sources(NEXUS_CORE
         Core/Scripting/GlmLuaBindings.cpp
         Core/ECS/Components/AnimationComponent.cpp
         Core/Systems/AnimationSystem.cpp
-        
+
 )
 
 # ---------- 对外头文件 ----------
@@ -47,8 +47,9 @@ target_include_directories(NEXUS_CORE
 # ScriptComponent.h    使用 <LuaBridge3/LuaBridge.h>
 # SpriteComponent.h    使用 <Rendering/Essentials/Vertex.h>（由 NEXUS_RENDERING 级联传递）
 # 这些都是纯头文件库，两平台都使用仓库内的版本，故以 PUBLIC 暴露。
+# SYSTEM：第三方库的内部告警（如 entt 的 -Wmissing-field-initializers）不应污染构建输出。
 target_include_directories(NEXUS_CORE
-    PUBLIC
+    SYSTEM PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/entt
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/LuaBridge3
@@ -89,28 +90,60 @@ if(WIN32)
             lua55
     )
 else()
-    # Linux：查找系统安装的 Lua
-    find_path(NEXUS_CORE_LUA_INCLUDE_DIR
-        NAMES lua.hpp lua.h
-        PATH_SUFFIXES lua lua5.4 lua-5.4
-    )
-    find_library(NEXUS_CORE_LUA_LIBRARY
-        NAMES lua lua5.4 lua-5.4 lua54
-    )
+     # Linux：优先用 pkg-config 定位，保证头文件与库来自同一版本。
+    #
+    # 不能用 find_path / find_library 分开找：多版本共存时会各取所需，
+    # 出现「头文件 5.4 + 库 5.5」的错配。Lua 5.5 已把 luaL_openlibs
+    # 由函数改成展开为 luaL_openselectedlibs 的宏，拿 5.4 头文件去链 5.5 库
+    # 就会得到 undefined reference to `luaL_openlibs'。
+    #
+    # pkg_check_modules 一次传多个模块名时要求全部命中，而这些名字是同一库在
+    # 不同发行版下的别名（Arch: lua/lua5.5，Fedora/Ubuntu: lua5.4…），故逐个试。
+    find_package(PkgConfig QUIET)
 
-    if(NOT NEXUS_CORE_LUA_INCLUDE_DIR OR NOT NEXUS_CORE_LUA_LIBRARY)
-        message(FATAL_ERROR
-            "未找到 Lua，请安装其开发包（例如 Fedora: sudo dnf install lua-devel）")
+        set(NEXUS_LUA_PC_MODULE "")
+    if(PKG_CONFIG_FOUND)
+        foreach(mod IN ITEMS lua5.5 lua-5.5 lua55 lua lua5.4 lua-5.4 lua54)
+            pkg_check_modules(NEXUS_LUA_PROBE QUIET ${mod})
+            if(NEXUS_LUA_PROBE_FOUND)
+                set(NEXUS_LUA_PC_MODULE ${mod})
+                break()
+            endif()
+        endforeach()
     endif()
 
-    target_include_directories(NEXUS_CORE
-        PUBLIC
-            ${NEXUS_CORE_LUA_INCLUDE_DIR}
-    )
-    target_link_libraries(NEXUS_CORE
-        PUBLIC
-            ${NEXUS_CORE_LUA_LIBRARY}
-    )
+    if(NEXUS_LUA_PC_MODULE)
+        # IMPORTED_TARGET 把头文件路径与库绑成一个目标，天然版本一致
+        pkg_check_modules(NEXUS_LUA REQUIRED IMPORTED_TARGET ${NEXUS_LUA_PC_MODULE})
+        target_link_libraries(NEXUS_CORE
+            PUBLIC
+                PkgConfig::NEXUS_LUA
+        )
+    else()
+        # 回退：系统没有 .pc 文件时（如源码安装）手工查找
+        find_path(NEXUS_CORE_LUA_INCLUDE_DIR
+            NAMES lua.hpp lua.h
+            PATH_SUFFIXES lua5.5 lua-5.5 lua lua5.4 lua-5.4
+        )
+        find_library(NEXUS_CORE_LUA_LIBRARY
+            NAMES lua5.5 lua-5.5 lua55 lua lua5.4 lua-5.4 lua54
+        )
+
+        if(NOT NEXUS_CORE_LUA_INCLUDE_DIR OR NOT NEXUS_CORE_LUA_LIBRARY)
+            message(FATAL_ERROR
+                "未找到 Lua，请安装其开发包（例如 Ubuntu: sudo apt install liblua5.5-dev; "
+                "Fedora: sudo dnf install lua-devel）")
+        endif()
+
+        target_include_directories(NEXUS_CORE
+            PUBLIC
+                ${NEXUS_CORE_LUA_INCLUDE_DIR}
+        )
+        target_link_libraries(NEXUS_CORE
+            PUBLIC
+                ${NEXUS_CORE_LUA_LIBRARY}
+        )
+    endif()
 endif()
 
 # ==============================================================================

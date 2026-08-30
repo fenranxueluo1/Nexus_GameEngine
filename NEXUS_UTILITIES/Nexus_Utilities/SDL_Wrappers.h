@@ -13,9 +13,11 @@ namespace NEXUS_UTIL {
 }
 
 typedef std::shared_ptr<SDL_Gamepad> Controller;
-static Controller make_shared_controller(SDL_Gamepad* controller);
+// 注意：不能加 static，函数定义在 SDL_Wrappers.cpp 中，
+// 加 static 会让每个包含本头文件的 TU 各得到一个未定义的内部链接声明。
+Controller make_shared_controller(SDL_Gamepad* controller);
 
 typedef std::shared_ptr<SDL_Cursor> Cursor;
-static Cursor make_shared_cursor(SDL_Cursor* cursor);
+Cursor make_shared_cursor(SDL_Cursor* cursor);
 
 typedef std::unique_ptr<SDL_Window, NEXUS_UTIL::SDL_Destroyer> WindowPtr;

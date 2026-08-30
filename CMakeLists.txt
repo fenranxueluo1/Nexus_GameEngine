@@ -29,7 +29,10 @@ endif()
 if(MSVC)
     add_compile_options(/W4 /utf-8)
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    # -Wno-missing-field-initializers：Vulkan 代码普遍用 C++ 指定初始化器写
+    # VkXxxCreateInfo{ .sType = ..., .foo = ... }，省略的成员按标准会被零初始化，
+    # 但 GCC/Clang 仍会逐个字段告警（GCC 16 依然如此），属于误报。
+    add_compile_options(-Wall -Wextra -Wpedantic -Wno-missing-field-initializers)
 endif()
 
 # ---------- Vulkan 开发包：修正新版 SDK 的目录布局 ----------

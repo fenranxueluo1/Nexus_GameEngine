@@ -20,7 +20,6 @@ namespace NEXUS_CORE::Systems {
 
 		for (auto entity : view)
 		{
-			const auto& transform = view.get<TransformComponent>(entity);
 			auto& sprite = view.get<SpriteComponent>(entity);
 			auto& animation = view.get<AnimationComponent>(entity);
 

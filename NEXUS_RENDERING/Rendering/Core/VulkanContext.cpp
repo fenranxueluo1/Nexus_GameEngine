@@ -304,7 +304,7 @@ namespace NEXUS_RENDERING {
 		std::vector<VkQueueFamilyProperties2> queueFamProps(queueFamCount, { VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2 });
 		vkGetPhysicalDeviceQueueFamilyProperties2(m_physicalDevice, &queueFamCount, queueFamProps.data());
 
-		for (int currentFamIdx = 0; currentFamIdx < queueFamProps.size(); currentFamIdx++)
+		for (uint32_t currentFamIdx = 0; currentFamIdx < queueFamProps.size(); currentFamIdx++)
 		{
 			VkBool32 hasPresentSupport = false;
 			vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, currentFamIdx, m_surface, &hasPresentSupport);

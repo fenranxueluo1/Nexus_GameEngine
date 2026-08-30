@@ -40,8 +40,9 @@ target_include_directories(NEXUS_RENDERING
 # ---------- glm 依赖（平台无关） ----------
 # glm 是纯头文件库，两平台都使用仓库内的版本。
 # 以 <glm/glm.hpp> 方式包含，故 include 路径指向其父目录 Dependencies/。
+# SYSTEM：这些都是第三方库（glm / volk / vma），不应让它们的内部告警污染构建输出。
 target_include_directories(NEXUS_RENDERING
-    PUBLIC
+    SYSTEM PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies
 )
 

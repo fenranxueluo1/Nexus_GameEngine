@@ -15,17 +15,18 @@ namespace NEXUS_RENDERING {
 	private:
 		uint32_t m_TextureIndex; // 1-based 索引，0 表示无效纹理
 		int m_Width, m_Height;
-		std::string m_sPath;
+		// 声明顺序必须与 Texture.cpp 初始化列表的顺序一致，否则会触发 -Wreorder
 		TextureType m_eType;
+		std::string m_sPath;
 
 	public:
 		Texture();
 		Texture(uint32_t index, int width, int height, TextureType type = TextureType::PIXEL, const std::string& texturePath = "");
 		~Texture() = default;
 
-		inline const int GetWidth() const { return m_Width; }
-		inline const int GetHeight() const { return m_Height; }
-		inline const uint32_t GetID() const { return m_TextureIndex; }
+		inline int GetWidth() const { return m_Width; }
+		inline int GetHeight() const { return m_Height; }
+		inline uint32_t GetID() const { return m_TextureIndex; }
 
 		void Bind();
 		void Unbind();

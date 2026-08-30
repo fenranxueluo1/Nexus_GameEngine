@@ -32,7 +32,7 @@ namespace NEXUS_RENDERING
         void Enable();
         void Disable();
 
-        inline const VkPipeline GetPipeline() const { return m_Pipeline; }
+        inline VkPipeline GetPipeline() const { return m_Pipeline; }
         inline const glm::mat4& GetProjection() const { return m_Projection; }
         inline bool IsValid() const { return m_Pipeline != VK_NULL_HANDLE; }
     };

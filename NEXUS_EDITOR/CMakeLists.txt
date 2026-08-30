@@ -56,7 +56,7 @@ target_include_directories(NEXUS_EDITOR
 # 故 include 路径需指向 glm 目录的父目录（Dependencies/），
 # 这样 <glm/glm.hpp> 才能正确解析到 Dependencies/glm/glm.hpp。
 target_include_directories(NEXUS_EDITOR
-    PRIVATE
+    SYSTEM PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies
 )
 
@@ -248,3 +248,14 @@ add_custom_command(TARGET NEXUS_EDITOR POST_BUILD
         ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basicShader.frag
         -o $<TARGET_FILE_DIR:NEXUS_EDITOR>/assets/shaders/basicShader.frag.spv
 )
+
+# ---------- 运行目标 ----------
+# 使 `cmake --build <构建目录> --target NEXUS_RUN` 等价于「先构建，再启动编辑器」。
+# 存在意义：Zed 的 task 会把参数用空格拼接后交给 shell，任何含空格或 && / || / []
+# 的 sh -c 脚本都会被截断（表现为 "-f: 第 1 行：[: 缺少 ]"），
+# 所以「编译 && 运行」不能写在任务脚本里，改由这个 CMake 目标承担。
+add_custom_target(NEXUS_RUN
+    COMMAND $<TARGET_FILE:NEXUS_EDITOR>
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:NEXUS_EDITOR>
+)
+add_dependencies(NEXUS_RUN NEXUS_EDITOR)
