@@ -86,7 +86,6 @@ main = {
 			end
 
 			transform.scale = vec2(scale, scale)
-
 			--[[
 			if Keyboard.pressed(KEY_W) then
 				print("Key W was just pressed")
