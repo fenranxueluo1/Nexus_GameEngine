@@ -92,7 +92,7 @@ namespace NEXUS_WINDOWING::Inputs {
         btnItr->second.Update(false);
     }
 
-    const bool Gamepad::IsBtnPressed(int btn) const
+    bool Gamepad::IsBtnPressed(int btn) const
     {
         if (btn == NEXUS_GP_BTN_UNKNOWN)
         {
@@ -110,7 +110,7 @@ namespace NEXUS_WINDOWING::Inputs {
         return btnItr->second.bIsPressed;
     }
 
-    const bool Gamepad::IsBtnJustPressed(int btn) const
+    bool Gamepad::IsBtnJustPressed(int btn) const
     {
         if (btn == NEXUS_GP_BTN_UNKNOWN)
         {
@@ -128,7 +128,7 @@ namespace NEXUS_WINDOWING::Inputs {
         return btnItr->second.bJustPressed;
     }
 
-    const bool Gamepad::IsBtnJustReleased(int btn) const
+    bool Gamepad::IsBtnJustReleased(int btn) const
     {
         if (btn == NEXUS_GP_BTN_UNKNOWN)
         {
@@ -146,12 +146,12 @@ namespace NEXUS_WINDOWING::Inputs {
         return btnItr->second.bJustReleased;
     }
 
-    const bool Gamepad::IsGamepadPresent() const
+    bool Gamepad::IsGamepadPresent() const
     {
         return m_pController != nullptr && SDL_HasGamepad();
     }
 
-    const Sint16 Gamepad::GetAxisPosition(Uint8 axis)
+    Sint16 Gamepad::GetAxisPosition(Uint8 axis)
     {
         auto axisItr = m_mapAxisValues.find(axis);
         if (axisItr == m_mapAxisValues.end())

@@ -25,9 +25,9 @@ namespace NEXUS_WINDOWING::Inputs {
 		void OnBtnPressed(int btn);
 		void OnBtnReleased(int btn);
 
-		const bool IsBtnPressed(int btn) const;
-		const bool IsBtnJustPressed(int btn) const;
-		const bool IsBtnJustReleased(int btn) const;
+		bool IsBtnPressed(int btn) const;
+		bool IsBtnJustPressed(int btn) const;
+		bool IsBtnJustReleased(int btn) const;
 
 		const std::tuple<int, int> GetMouseScreenPosition();
 
@@ -35,8 +35,8 @@ namespace NEXUS_WINDOWING::Inputs {
 		inline void SetMouseWheelY(int wheel) { m_WheelY = wheel; }
 		inline void SetMouseMoving(bool moving) { m_bMouseMoving = moving; }
 
-		inline const int GetMouseWheelX() const { return m_WheelX; }
-		inline const int GetMouseWheelY() const { return m_WheelY; }
-		inline const bool IsMouseMoving() const { return m_bMouseMoving; }
+		inline int GetMouseWheelX() const { return m_WheelX; }
+		inline int GetMouseWheelY() const { return m_WheelY; }
+		inline bool IsMouseMoving() const { return m_bMouseMoving; }
 	};
 }

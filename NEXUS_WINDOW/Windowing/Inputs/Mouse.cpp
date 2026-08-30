@@ -50,7 +50,7 @@ namespace NEXUS_WINDOWING::Inputs {
         btnItr->second.Update(false);
     }
 
-    const bool Mouse::IsBtnPressed(int btn) const
+    bool Mouse::IsBtnPressed(int btn) const
     {
         if (btn == NEXUS_MOUSE_UNKNOWN)
         {
@@ -68,7 +68,7 @@ namespace NEXUS_WINDOWING::Inputs {
         return btnItr->second.bIsPressed;
     }
 
-    const bool Mouse::IsBtnJustPressed(int btn) const
+    bool Mouse::IsBtnJustPressed(int btn) const
     {
         if (btn == NEXUS_MOUSE_UNKNOWN)
         {
@@ -86,7 +86,7 @@ namespace NEXUS_WINDOWING::Inputs {
         return btnItr->second.bJustPressed;
     }
 
-    const bool Mouse::IsBtnJustReleased(int btn) const
+    bool Mouse::IsBtnJustReleased(int btn) const
     {
         if (btn == NEXUS_MOUSE_UNKNOWN)
         {

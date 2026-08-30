@@ -24,19 +24,19 @@ namespace NEXUS_WINDOWING::Inputs {
 		void OnBtnPressed(int btn);
 		void OnBtnReleased(int btn);
 
-		const bool IsBtnPressed(int btn) const;
-		const bool IsBtnJustPressed(int btn) const;
-		const bool IsBtnJustReleased(int btn) const;
+		bool IsBtnPressed(int btn) const;
+		bool IsBtnJustPressed(int btn) const;
+		bool IsBtnJustReleased(int btn) const;
 
-		const bool IsGamepadPresent() const;
+		bool IsGamepadPresent() const;
 
-		const Sint16 GetAxisPosition(Uint8 axis);
+		Sint16 GetAxisPosition(Uint8 axis);
 		void SetAxisPositionValue(Uint8 axis, Sint16 value);
 
 		inline void SetJoystickHatValue(Uint8 value) { m_JoystickHatValue = value; }
-		inline const Uint8 GetJoystickHatValue() const { return m_JoystickHatValue; }
+		inline Uint8 GetJoystickHatValue() const { return m_JoystickHatValue; }
 
-		inline const bool CheckJoystickID(SDL_JoystickID joystickID) const { return m_InstanceID == joystickID; }
+		inline bool CheckJoystickID(SDL_JoystickID joystickID) const { return m_InstanceID == joystickID; }
 		inline const std::string& GetName() const { return m_sName; }
 	};
 }

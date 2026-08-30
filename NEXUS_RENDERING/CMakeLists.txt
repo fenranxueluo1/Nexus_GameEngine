@@ -46,6 +46,38 @@ target_include_directories(NEXUS_RENDERING
         ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies
 )
 
+# ---------- volk / VMA 头文件路径归一化 ----------
+# 这两个库的头文件目录布局随来源而变，只有 vulkan/vulkan.h 是固定的：
+#   Vulkan SDK     ：<prefix>/include/volk/volk.h、<prefix>/include/vma/vk_mem_alloc.h
+#   Linux 包管理器 ：<prefix>/include/volk.h、<prefix>/include/vk_mem_alloc.h（无子目录）
+# 查找时两种布局都接受，源码统一写成 #include <volk.h> / #include <vk_mem_alloc.h>。
+# SYSTEM：第三方库，不应让它们的内部告警污染构建输出。
+find_path(NEXUS_VOLK_INCLUDE_DIR
+    NAMES volk.h
+    HINTS $ENV{VULKAN_SDK}/Include $ENV{VULKAN_SDK}/include
+    PATH_SUFFIXES include volk
+    DOC "volk 头文件所在目录"
+)
+find_path(NEXUS_VMA_INCLUDE_DIR
+    NAMES vk_mem_alloc.h
+    HINTS $ENV{VULKAN_SDK}/Include $ENV{VULKAN_SDK}/include
+    PATH_SUFFIXES include vma
+    DOC "VulkanMemoryAllocator 头文件所在目录"
+)
+foreach(_NEXUS_DEP IN ITEMS VOLK VMA)
+    if(NOT NEXUS_${_NEXUS_DEP}_INCLUDE_DIR)
+        message(FATAL_ERROR
+            "未找到 ${_NEXUS_DEP} 的头文件。\n"
+            "Linux  ：请安装 volk / vulkan-memory-allocator 包\n"
+            "Windows：请安装 Vulkan SDK，并使 VULKAN_SDK 指向 SDK 根目录")
+    endif()
+endforeach()
+target_include_directories(NEXUS_RENDERING
+    SYSTEM PUBLIC
+        ${NEXUS_VOLK_INCLUDE_DIR}
+        ${NEXUS_VMA_INCLUDE_DIR}
+)
+
 # ---------- Vulkan 依赖（平台无关） ----------
 # Vulkan SDK 通过 find_package(Vulkan COMPONENTS volk glslc) 在顶层引入，
 # 目标 Vulkan::Vulkan / Vulkan::volk 提供头文件与链接库

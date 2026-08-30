@@ -4,7 +4,7 @@
 #include "../Essentials/Shader.h"
 #include "VulkanContext.h"
 #include <vulkan/vulkan.h>
-#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 #include <array>
 #include <vector>
 #include <memory>

@@ -2,7 +2,7 @@
 
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
-#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <memory>
