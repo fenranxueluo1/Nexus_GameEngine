@@ -20,6 +20,10 @@
 #include <LuaBridge3/LuaBridge.h>
 #include <Core/Systems/RenderSystem.h>
 #include <Core/Systems/AnimationSystem.h>
+#include <Core/Scripting/InputManager.h>
+#include <Windowing/Inputs/Keyboard.h>
+#include <Windowing/Inputs/Mouse.h>
+#include <Windowing/Inputs/Gamepad.h>
 
 namespace NEXUS_EDITOR {
 
@@ -28,7 +32,8 @@ namespace NEXUS_EDITOR {
 		NEXUS_INIT_LOGS(true, true);
 
     // SDL3 已移除 SDL_INIT_EVERYTHING，需显式列出要初始化的子系统
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
+    // GAMEPAD / JOYSTICK 子系统必须显式初始化，否则手柄插拔与按键事件不会投递
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK))
     {
         std::string error = SDL_GetError();
         NEXUS_ERROR("无法初始化SDL: {}", error);
@@ -37,7 +42,7 @@ namespace NEXUS_EDITOR {
 
     //创建窗口（Vulkan 需要 SDL_WINDOW_VULKAN 标志）
     m_pWindow = std::make_unique<NEXUS_WINDOWING::Window>("测试窗口", 640, 480, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, true, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-    
+
     if (!m_pWindow->GetWindow())
     {
         NEXUS_ERROR("无法创建窗口！");
@@ -56,18 +61,6 @@ namespace NEXUS_EDITOR {
     if (!assetManager)
     {
     	NEXUS_ERROR("无法创建资产管理器!");
-    	return false;
-    }
-
-    if (!assetManager->AddTexture("castle", "./assets/textures/castle.png", true))
-    {
-    	NEXUS_ERROR("无法创建并添加纹理");
-    	return false;
-    }
-
-	if (!assetManager->AddTexture("player", "./assets/textures/player.png", true))
-    {
-    	NEXUS_ERROR("无法创建并添加纹理");
     	return false;
     }
 
@@ -105,14 +98,14 @@ namespace NEXUS_EDITOR {
 		NEXUS_ERROR("无法将lua状态添加到注册表上下文中!");
 		return false;
 	}
-		
+
 	auto scriptSystem = std::make_shared<NEXUS_CORE::Systems::ScriptingSystem>(*m_pRegistry);
 	if (!scriptSystem)
 	{
 		NEXUS_ERROR("无法创建脚本系统!");
 		return false;
 	}
-		
+
 	if (!m_pRegistry->AddToContext<std::shared_ptr<NEXUS_CORE::Systems::ScriptingSystem>>(scriptSystem))
 	{
 		NEXUS_ERROR("无法将脚本系统添加到注册表上下文中!");
@@ -167,13 +160,14 @@ namespace NEXUS_EDITOR {
 	}
 
 	NEXUS_CORE::Systems::ScriptingSystem::RegisterLuaBindings(lua.get(), *m_pRegistry);
-		
+	NEXUS_CORE::Systems::ScriptingSystem::RegisterLuaFunctions(lua.get());
+
 	if (!scriptSystem->LoadMainScript(lua.get()))
 	{
 		NEXUS_ERROR("无法加载主lua脚本!");
 		return false;
 	}
-	
+
     return true;
 }
 
@@ -198,6 +192,14 @@ bool Application::LoadShaders()
 
     void Application::ProcessEvents()
     {
+        auto& inputManager = NEXUS_CORE::InputManager::GetInstance();
+		auto& keyboard = inputManager.GetKeyboard();
+		auto& mouse = inputManager.GetMouse();
+
+		// 先清除上一帧遗留的 just_pressed / just_released 状态，再处理本帧事件。
+		// 这一步不能放到 Update() 里（事件处理之后）：那样会把刚设置的 just* 标志
+		// 立刻清掉，Lua 侧的 just_pressed 将永远读到 false。
+		keyboard.Update();
 		//处理事件
         while (SDL_PollEvent(&m_Event))
         {
@@ -214,7 +216,45 @@ bool Application::LoadShaders()
                 {
                     m_bIsRunning = false;
                 }
+                // SDL3 中按键码字段是 key，SDL2 的 key.keysym.sym 已移除
+				keyboard.OnKeyPressed(m_Event.key.key);
+				break;
+
+			case SDL_EVENT_KEY_UP:
+				// SDL3 已移除 SDL_KEYUP，改用 SDL_EVENT_KEY_UP
+				keyboard.OnKeyReleased(m_Event.key.key);
                 break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+				mouse.OnBtnPressed(m_Event.button.button);
+				break;
+			case SDL_EVENT_MOUSE_BUTTON_UP:
+				mouse.OnBtnReleased(m_Event.button.button);
+				break;
+			case SDL_EVENT_MOUSE_WHEEL:
+				mouse.SetMouseWheelX(static_cast<int>(m_Event.wheel.x));
+				mouse.SetMouseWheelY(static_cast<int>(m_Event.wheel.y));
+				break;
+			case SDL_EVENT_MOUSE_MOTION:
+				mouse.SetMouseMoving(true);
+				break;
+			case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+				inputManager.GamepadBtnPressed(m_Event);
+				break;
+			case SDL_EVENT_GAMEPAD_BUTTON_UP:
+				inputManager.GamepadBtnReleased(m_Event);
+				break;
+			case SDL_EVENT_GAMEPAD_ADDED:
+				inputManager.AddGamepad(m_Event.gdevice.which);
+				break;
+			case SDL_EVENT_GAMEPAD_REMOVED:
+				inputManager.RemoveGamepad(m_Event.gdevice.which);
+				break;
+			case SDL_EVENT_JOYSTICK_AXIS_MOTION:
+				inputManager.GamepadAxisValues(m_Event);
+				break;
+			case SDL_EVENT_JOYSTICK_HAT_MOTION:
+				inputManager.GamepadHatValues(m_Event);
+				break;
             default:
                 break;
             }
@@ -229,7 +269,7 @@ bool Application::LoadShaders()
 			NEXUS_ERROR("无法从注册表上下文中获取摄像机!");
 			return;
 		}
-		
+
 		camera->Update();
 
 		auto& scriptSystem = m_pRegistry->GetContext<std::shared_ptr<NEXUS_CORE::Systems::ScriptingSystem>>();
@@ -237,6 +277,10 @@ bool Application::LoadShaders()
 
 		auto& animationSystem = m_pRegistry->GetContext<std::shared_ptr<NEXUS_CORE::Systems::AnimationSystem>>();
 		animationSystem->Update();
+
+		auto& inputManager = NEXUS_CORE::InputManager::GetInstance();
+		inputManager.GetMouse().Update();
+		inputManager.UpdateGamepads();
     }
 
     void Application::Render()

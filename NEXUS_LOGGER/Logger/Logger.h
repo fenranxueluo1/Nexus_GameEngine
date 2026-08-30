@@ -22,6 +22,8 @@
 * @param 接收 std::string_view 或字符串，形如 "This is a log value: {0}, and {1}"，后面跟参数
 */
 #define NEXUS_ERROR(...) NEXUS_LOGGER::Logger::GetInstance().Error(std::source_location::current(), __VA_ARGS__);
+
+#define NEXUS_ASSERT(x) assert(x);
 #define NEXUS_INIT_LOGS(console, retain) NEXUS_LOGGER::Logger::GetInstance().Init(console, retain);
 
 namespace NEXUS_LOGGER {
@@ -51,7 +53,7 @@ namespace NEXUS_LOGGER {
 
 	public:
 		static Logger& GetInstance();
-		
+
 		~Logger() = default;
 		// 禁止拷贝，保证全局唯一
 		Logger(const Logger&) = delete;

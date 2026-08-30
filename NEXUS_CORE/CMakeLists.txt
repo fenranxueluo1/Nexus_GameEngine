@@ -27,6 +27,7 @@ target_sources(NEXUS_CORE
         Core/ECS/Components/TransformComponent.cpp
         Core/ECS/Components/SpriteComponent.cpp
         Core/Scripting/GlmLuaBindings.cpp
+        Core/Scripting/InputManager.cpp
         Core/ECS/Components/AnimationComponent.cpp
         Core/Systems/AnimationSystem.cpp
 
@@ -57,10 +58,13 @@ target_include_directories(NEXUS_CORE
 
 # ---------- 链接依赖 ----------
 # NEXUS_RENDERING：SpriteComponent.h / AssetManager 依赖（PUBLIC，头文件路径级联传递）
+# NEXUS_WINDOW
+#   且 GetKeyboard() 返回其引用 → 必须以 PUBLIC 传递，否则使用方（NEXUS_EDITOR）看不到
 # NEXUS_LOGGER：AssetManager.cpp 使用 <Logger/Logger.h>（NEXUS_ERROR 等日志宏）
 target_link_libraries(NEXUS_CORE
     PUBLIC
         NEXUS_RENDERING
+        NEXUS_WINDOW
     PRIVATE
         NEXUS_LOGGER
 )

@@ -6,6 +6,10 @@
 #include <Rendering/Essentials/Shader.h>
 #include <Rendering/Essentials/Texture.h>
 
+#include "../ECS/Registry.h"
+
+struct lua_State;
+
 namespace NEXUS_RESOURCES {
 
 	class AssetManager
@@ -32,7 +36,7 @@ namespace NEXUS_RESOURCES {
 		* @return 若纹理存在返回目标纹理，否则返回一个空的纹理对象。
 		*/
 		const NEXUS_RENDERING::Texture& GetTexture(const std::string& textureName);
-		
+
 		/*
 		* @brief 检查着色器是否已存在，若不存在则创建并加载进资产管理器。
 		* @param shaderName 用作键的着色器名称（std::string）。
@@ -48,5 +52,7 @@ namespace NEXUS_RESOURCES {
 		* @return 若着色器存在返回目标着色器，否则返回一个空的着色器对象。
 		*/
 		NEXUS_RENDERING::Shader& GetShader(const std::string& shaderName);
+
+		static void CreateLuaAssetManager(lua_State* lua, NEXUS_CORE::ECS::Registry& registry);
 	};
 }
